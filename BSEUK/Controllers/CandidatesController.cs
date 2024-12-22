@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -43,6 +43,20 @@ namespace BSEUK.Controllers
             return candidate;
         }
 
+        // GET: api/Candidates/GetByRollNumber/{rollNumber}
+        [HttpGet("GetByRollNumber/{rollNumber}")]
+        public async Task<ActionResult<Candidate>> GetByRollNumber(string rollNumber)
+        {
+            var candidate = await _context.Candidates
+                .FirstOrDefaultAsync(c => c.RollNumber == rollNumber);
+
+            if (candidate == null)
+            {
+                return NotFound();
+            }
+
+            return candidate;
+        }
 
         [HttpPost("GetStudents")]
         public async Task<ActionResult<IEnumerable<Candidate>>> Getstudents(inputdata info)
@@ -98,9 +112,6 @@ namespace BSEUK.Controllers
 
             return CreatedAtAction("GetCandidate", new { id = candidate.CandidateID }, candidate);
         }
-
-
-
 
         // DELETE: api/Candidates/5
         [HttpDelete("{id}")]

@@ -393,6 +393,159 @@ namespace BSEUK.Controllers
         {
             return _context.StudentsMarksObtaineds.Any(e => e.SmoID == id);
         }
+
+        [HttpGet("GetStudentResult/{rollNumber}")]
+        public async Task<ActionResult> GetStudentResult(string rollNumber)
+        {
+            // First get the candidate
+            var candidate = await _context.Candidates
+                .FirstOrDefaultAsync(c => c.RollNumber == rollNumber);
+
+            if (candidate == null)
+            {
+                return NotFound("Candidate not found");
+            }
+
+            // Get all papers for the candidate's semester
+            var papers = await _context.Papers
+                .Where(p => p.SemID == candidate.SemID)
+                .Select(p => new
+                {
+                    p.PaperID,
+                    p.PaperCode,
+                    p.PaperName,
+                    TheoryMaxMarks = p.TheoryPaperMaxMarks ?? 0,
+                    InternalMaxMarks = p.InteralMaxMarks ?? 0,
+                    PracticalMaxMarks = p.PracticalMaxMarks ?? 0,
+                    p.PaperType,
+                    TotalMaxMarks = (p.TheoryPaperMaxMarks ?? 0) + (p.InteralMaxMarks ?? 0) + (p.PracticalMaxMarks ?? 0)
+                })
+                .ToListAsync();
+
+            // Get marks for all papers
+            var marks = await _context.StudentsMarksObtaineds
+                .Where(m => m.CandidateID == candidate.CandidateID)
+                .ToListAsync();
+
+            // Prepare result
+            var result = new
+            {
+                StudentDetails = new
+                {
+                    CandidateID = candidate.CandidateID,
+                    CandidateName = candidate.CandidateName,
+                    RollNumber = candidate.RollNumber,
+                    FName = candidate.FName,
+                    MName = candidate.MName,
+                    Group = candidate.Group,
+                    InstitutionName = candidate.InstitutionName,
+                    DOB = candidate.DOB
+                },
+                MarksDetails = papers.Select(paper =>
+                {
+                    var studentMark = marks.FirstOrDefault(m => m.PaperID == paper.PaperID);
+                    return new
+                    {
+                        paper.PaperCode,
+                        paper.PaperName,
+                        MaxMarks = paper.TotalMaxMarks,
+                        TheoryMarks = studentMark?.TheoryPaperMarks ?? 0,
+                        InternalMarks = studentMark?.InteralMarks ?? 0,
+                        PracticalMarks = studentMark?.PracticalMaxMarks ?? 0,
+                        Total = (studentMark?.TheoryPaperMarks ?? 0) + 
+                               (studentMark?.InteralMarks ?? 0) + 
+                               (studentMark?.PracticalMaxMarks ?? 0)
+                    };
+                }).ToList(),
+                TotalMarks = marks.Sum(m => m.TheoryPaperMarks + m.InteralMarks + m.PracticalMaxMarks),
+                MaximumMarks = papers.Sum(p => p.TotalMaxMarks)
+            };
+
+            return Ok(result);
+        }
+
+        [HttpPost("GetBulkResult")]
+        public async Task<ActionResult> GetBulkResult(BulkResultRequest request)
+        {
+            // Get all candidates for the session and semester
+            var candidates = await _context.Candidates
+                .Where(c => c.SesID == request.SessionId && c.SemID == request.SemesterId)
+                .ToListAsync();
+
+            if (!candidates.Any())
+            {
+                return NotFound("No candidates found for the specified session and semester");
+            }
+
+            // Get all papers for the semester
+            var papers = await _context.Papers
+                .Where(p => p.SemID == request.SemesterId)
+                .Select(p => new
+                {
+                    p.PaperID,
+                    p.PaperCode,
+                    p.PaperName,
+                    TheoryMaxMarks = p.TheoryPaperMaxMarks ?? 0,
+                    InternalMaxMarks = p.InteralMaxMarks ?? 0,
+                    PracticalMaxMarks = p.PracticalMaxMarks ?? 0,
+                    p.PaperType,
+                    TotalMaxMarks = (p.TheoryPaperMaxMarks ?? 0) + (p.InteralMaxMarks ?? 0) + (p.PracticalMaxMarks ?? 0)
+                })
+                .ToListAsync();
+
+            // Get all marks for these candidates
+            var candidateIds = candidates.Select(c => c.CandidateID).ToList();
+            var allMarks = await _context.StudentsMarksObtaineds
+                .Where(m => candidateIds.Contains(m.CandidateID))
+                .ToListAsync();
+
+            // Prepare results for each candidate
+            var results = candidates.Select(candidate =>
+            {
+                var studentMarks = allMarks.Where(m => m.CandidateID == candidate.CandidateID);
+                
+                return new
+                {
+                    StudentDetails = new
+                    {
+                        CandidateID = candidate.CandidateID,
+                        CandidateName = candidate.CandidateName,
+                        RollNumber = candidate.RollNumber,
+                        FName = candidate.FName,
+                        MName = candidate.MName,
+                        Group = candidate.Group,
+                        InstitutionName = candidate.InstitutionName,
+                        DOB = candidate.DOB
+                    },
+                    MarksDetails = papers.Select(paper =>
+                    {
+                        var mark = studentMarks.FirstOrDefault(m => m.PaperID == paper.PaperID);
+                        return new
+                        {
+                            paper.PaperCode,
+                            paper.PaperName,
+                            MaxMarks = paper.TotalMaxMarks,
+                            TheoryMarks = mark?.TheoryPaperMarks ?? 0,
+                            InternalMarks = mark?.InteralMarks ?? 0,
+                            PracticalMarks = mark?.PracticalMaxMarks ?? 0,
+                            Total = (mark?.TheoryPaperMarks ?? 0) + 
+                                   (mark?.InteralMarks ?? 0) + 
+                                   (mark?.PracticalMaxMarks ?? 0)
+                        };
+                    }).ToList(),
+                    TotalMarks = studentMarks.Sum(m => m.TheoryPaperMarks + m.InteralMarks + m.PracticalMaxMarks),
+                    MaximumMarks = papers.Sum(p => p.TotalMaxMarks)
+                };
+            }).ToList();
+
+            return Ok(results);
+        }
+
+        public class BulkResultRequest
+        {
+            public int SessionId { get; set; }
+            public int SemesterId { get; set; }
+        }
     }
 
     public class inputforGCR
