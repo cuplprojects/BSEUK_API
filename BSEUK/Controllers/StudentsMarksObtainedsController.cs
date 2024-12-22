@@ -119,6 +119,20 @@ namespace BSEUK.Controllers
             return Ok(result);
         }
 
+        // GET: api/StudentsMarksObtaineds/GetStudentPaperMarks/{studentId}/{paperId}
+        [HttpGet("GetStudentPaperMarks/{studentId}/{paperId}")]
+        public async Task<ActionResult<StudentsMarksObtained>> GetStudentPaperMarks(int studentId, int paperId)
+        {
+            var mark = await _context.StudentsMarksObtaineds
+                .FirstOrDefaultAsync(m => m.CandidateID == studentId && m.PaperID == paperId);
+
+            if (mark == null)
+            {
+                return NotFound();
+            }
+
+            return mark;
+        }
 
         [HttpPost("GetCumulativeResult")]
         public async Task<ActionResult> GetCumulativeResult(inputforGCR igcr)
