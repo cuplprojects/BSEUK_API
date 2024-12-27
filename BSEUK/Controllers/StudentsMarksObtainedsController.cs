@@ -272,6 +272,8 @@ namespace BSEUK.Controllers
                 return NotFound(new { Message = "Student not found." });
             }
 
+            var papers = _context.Papers.Where(u => u.SemID == info.SemesterId).ToList();
+
             var candidateScores = _context.StudentsMarksObtaineds
                 .Where(u => u.CandidateID == studentDetails.CandidateID)
                 .Join(
@@ -379,6 +381,8 @@ namespace BSEUK.Controllers
                         marksDetails = scoresWithRowTotal
                     }
                 },
+                papers
+
             };
 
             return Ok(result);
