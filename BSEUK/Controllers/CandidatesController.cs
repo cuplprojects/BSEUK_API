@@ -44,7 +44,7 @@ namespace BSEUK.Controllers
         }
 
 
-        [HttpGet("GetStudents")]
+        [HttpPost("GetStudents")]
         public async Task<ActionResult<IEnumerable<Candidate>>> Getstudents(inputdata info)
         {
             var candidates = await _context.Candidates.Where(u=>u.SesID==info.SesID && u.SemID == info.SemID).ToListAsync();

@@ -1,5 +1,6 @@
 using BSEUK.Data;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,8 @@ builder.Services.AddCors(options =>
                .AllowAnyHeader();
     });
 });
+
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultAppDBConnection"), new MySqlServerVersion(new Version(8, 0, 23))));

@@ -17,6 +17,6 @@ namespace BSEUK.Models
 
         public int? InteralMarks { get; set; }
 
-        public int? PracticalMaxMarks { get; set; }
+        public int? PracticalMarks { get; set; }
     }
 }
