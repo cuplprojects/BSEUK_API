@@ -12,7 +12,7 @@ namespace BSEUK.Models
 
         public string CandidateName { get; set; }
 
-        public string Group {  get; set; }
+        public string Group { get; set; }
 
         public string RollNumber { get; set; }
 
@@ -20,12 +20,14 @@ namespace BSEUK.Models
 
         public string MName { get; set; }
 
-        public string DOB {  get; set; }
+        public string DOB { get; set; }
 
         public string InstitutionName { get; set; }
 
         public int SemID { get; set; }
 
         public int SesID { get; set; }
+
+        public string Category {  get; set; }
     }
 }

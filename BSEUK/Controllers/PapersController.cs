@@ -41,6 +41,19 @@ namespace BSEUK.Controllers
 
             return paper;
         }
+        
+        [HttpGet("GetBySem/{SemID}")]
+        public async Task<ActionResult<IEnumerable<Paper>>> GetPaperBySemID(int SemID)
+        {
+            var papers = _context.Papers.Where(u => u.SemID == SemID).ToList();
+            
+            if (papers == null)
+            {
+                return NotFound();
+            }
+
+            return papers;
+        }
 
         // PUT: api/Papers/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
