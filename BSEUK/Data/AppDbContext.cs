@@ -13,6 +13,7 @@ namespace BSEUK.Data
         public DbSet<User> Users { get; set; }
         public DbSet<UserAuth> UserAuths { get; set; }
         public DbSet<PaperType> PaperTypes{ get; set; }
+        public DbSet<Group> Groups{ get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
