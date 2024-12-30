@@ -11,6 +11,9 @@
     <PackageReference Include="CrystalDecisions.ReportSource" Version="1.0.0" />
     <PackageReference Include="CrystalDecisions.Shared" Version="1.0.0" />
     <PackageReference Include="CrystalDecisions.Web" Version="1.0.1" />
+    <PackageReference Include="CrystalDecisions.Windows.Forms" Version="1.0.0" />
+    <PackageReference Include="CrystalReports.ReportAppServer.ClientDoc" Version="13.0.4003" />
+    <PackageReference Include="CrystalReports.Windows.Forms" Version="13.0.4003" />
     <PackageReference Include="DinkToPdf" Version="1.0.8" />
     <PackageReference Include="itext7" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNet.Cors" Version="5.3.0" />

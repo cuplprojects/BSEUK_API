@@ -28,6 +28,8 @@ namespace BSEUK.Models
 
         public int SesID { get; set; }
 
-        public string Category {  get; set; }
+        public string Category { get; set; }
+
+        public string PapersOpted { get; set; }
     }
 }

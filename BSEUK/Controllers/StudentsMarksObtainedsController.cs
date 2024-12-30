@@ -5,6 +5,9 @@ using BSEUK.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using CrystalDecisions.CrystalReports.Engine;
+using CrystalDecisions.Shared;
+using System.Data;
 
 
 
@@ -390,7 +393,7 @@ namespace BSEUK.Controllers
 
 
 
-        [HttpPost("GetCumulativeResult")]
+        /*[HttpPost("GetCumulativeResult")]
         public IActionResult GetCumulativeResultPDF(inputforGCR igcr)
         {
             // Fetch the necessary data
@@ -594,8 +597,92 @@ namespace BSEUK.Controllers
             var pdf = document.GeneratePdf();
             return File(pdf, "application/pdf", "CumulativeResult.pdf");
         }
+*/
+        [HttpPost("GetCumulativeResult")]
+        public IActionResult GetCumulativeResultPDF(inputforGCR igcr)
+        {
+            try
+            {
+                // Fetch the necessary data and prepare DataTables
+                var studentsTable = new DataTable("Students");
+                studentsTable.Columns.Add("CandidateID", typeof(int));
+                studentsTable.Columns.Add("CandidateName", typeof(string));
+                studentsTable.Columns.Add("RollNumber", typeof(string));
+                studentsTable.Columns.Add("Group", typeof(string));
+                studentsTable.Columns.Add("FName", typeof(string));
+                studentsTable.Columns.Add("MName", typeof(string));
+                studentsTable.Columns.Add("InstitutionName", typeof(string));
+                studentsTable.Columns.Add("DOB", typeof(DateTime));
 
+                var papersTable = new DataTable("Papers");
+                papersTable.Columns.Add("PaperID", typeof(int));
+                papersTable.Columns.Add("PaperName", typeof(string));
+                papersTable.Columns.Add("PaperCode", typeof(string));
+                papersTable.Columns.Add("PaperType", typeof(int));
+                papersTable.Columns.Add("TheoryPaperMaxMarks", typeof(int));
+                papersTable.Columns.Add("PracticalMaxMarks", typeof(int));
+                papersTable.Columns.Add("InteralMaxMarks", typeof(int));
 
+                var marksTable = new DataTable("Marks");
+                marksTable.Columns.Add("CandidateID", typeof(int));
+                marksTable.Columns.Add("PaperID", typeof(int));
+                marksTable.Columns.Add("TheoryPaperMarks", typeof(int));
+                marksTable.Columns.Add("InteralMarks", typeof(int));
+                marksTable.Columns.Add("PracticalMarks", typeof(int));
+
+                // Populate DataTables
+                var students = _context.Candidates
+                    .Where(u => u.SemID == igcr.SemID && u.SesID == igcr.SesID)
+                    .ToList();
+                foreach (var student in students)
+                {
+                    studentsTable.Rows.Add(student.CandidateID, student.CandidateName, student.RollNumber, student.Group,
+                                           student.FName, student.MName, student.InstitutionName, student.DOB);
+                }
+
+                var papers = _context.Papers
+                    .Where(u => u.SemID == igcr.SemID)
+                    .ToList();
+                foreach (var paper in papers)
+                {
+                    papersTable.Rows.Add(paper.PaperID, paper.PaperName, paper.PaperCode, paper.PaperType,
+                                         paper.TheoryPaperMaxMarks, paper.PracticalMaxMarks, paper.InteralMaxMarks);
+                }
+
+                var marks = _context.StudentsMarksObtaineds
+                    .Where(m => students.Select(s => s.CandidateID).Contains(m.CandidateID) &&
+                                papers.Select(p => p.PaperID).Contains(m.PaperID))
+                    .ToList();
+                foreach (var mark in marks)
+                {
+                    marksTable.Rows.Add(mark.CandidateID, mark.PaperID, mark.TheoryPaperMarks, mark.InteralMarks, mark.PracticalMarks);
+                }
+
+                // Load the Crystal Report
+                ReportDocument reportDocument = new ReportDocument();
+                string reportPath = Path.Combine(Directory.GetCurrentDirectory(), "Reports", "UTTRAKHAND - FIRST.rpt");
+                reportDocument.Load(reportPath);
+
+                // Set the data source
+                DataSet reportData = new DataSet();
+                reportData.Tables.Add(studentsTable);
+                reportData.Tables.Add(papersTable);
+                reportData.Tables.Add(marksTable);
+
+                reportDocument.SetDataSource(reportData);
+
+                // Export the report to PDF
+                using (var stream = reportDocument.ExportToStream(ExportFormatType.PortableDocFormat))
+                {
+                    stream.Seek(0, SeekOrigin.Begin);
+                    return File(stream, "application/pdf", "CumulativeResult.pdf");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
 
 
 
