@@ -20,5 +20,9 @@ namespace BSEUK.Models
         public int? PracticalMarks { get; set; }
 
         public int? TotalMarks { get; set; }
+
+        public string? Status { get; set; }
+
+        public string? Remark { get; set; }
     }
 }
