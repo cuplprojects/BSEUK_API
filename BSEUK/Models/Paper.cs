@@ -18,5 +18,7 @@
 
         public int SemID { get; set; }
 
+        public int TotalMarks { get; set; }
+
     }
 }

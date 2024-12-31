@@ -724,11 +724,21 @@ namespace BSEUK.Controllers
                     existingRecord.PracticalMarks = studentsMarksObtained.PracticalMarks;
                 }
 
+                // Calculate TotalMarks
+                existingRecord.TotalMarks = (existingRecord.TheoryPaperMarks ?? 0) +
+                                            (existingRecord.InteralMarks ?? 0) +
+                                            (existingRecord.PracticalMarks ?? 0);
+
                 // Save changes to the database
                 _context.Entry(existingRecord).State = EntityState.Modified;
             }
             else
             {
+                // Calculate TotalMarks for the new record
+                studentsMarksObtained.TotalMarks = (studentsMarksObtained.TheoryPaperMarks ?? 0) +
+                                                   (studentsMarksObtained.InteralMarks ?? 0) +
+                                                   (studentsMarksObtained.PracticalMarks ?? 0);
+
                 // Add a new record if no existing record is found
                 _context.StudentsMarksObtaineds.Add(studentsMarksObtained);
             }
@@ -738,6 +748,7 @@ namespace BSEUK.Controllers
             // Return the updated or newly created record
             return CreatedAtAction("GetStudentsMarksObtained", new { id = studentsMarksObtained.SmoID }, studentsMarksObtained);
         }
+
 
         // DELETE: api/StudentsMarksObtaineds/5
         [HttpDelete("{id}")]

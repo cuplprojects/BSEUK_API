@@ -91,6 +91,7 @@ namespace BSEUK.Controllers
         [HttpPost]
         public async Task<ActionResult<Paper>> PostPaper(Paper paper)
         {
+            paper.TotalMarks =(int)paper.TheoryPaperMaxMarks + (int)paper.PracticalMaxMarks + (int)paper.InteralMaxMarks;
             _context.Papers.Add(paper);
             await _context.SaveChangesAsync();
 
