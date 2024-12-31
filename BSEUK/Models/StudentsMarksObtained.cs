@@ -18,5 +18,7 @@ namespace BSEUK.Models
         public int? InteralMarks { get; set; }
 
         public int? PracticalMarks { get; set; }
+
+        public int? TotalMarks { get; set; }
     }
 }
