@@ -47,7 +47,7 @@ namespace BSEUK.Controllers
             var candidates = await _context.Candidates.ToListAsync(); // Bring candidates into memory
             var filteredCandidates = candidates
                 .Where(u => u.PapersOpted.Split(',').Contains(paperCode))
-                .Select(c => new { c.CandidateID, c.CandidateName }) // Include additional candidate details if needed
+                .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber }) // Include additional candidate details if needed
                 .ToList();
 
             if (!filteredCandidates.Any())
@@ -70,6 +70,7 @@ namespace BSEUK.Controllers
                     {
                         CandidateID = candidate.CandidateID,
                         CandidateName = candidate.CandidateName,
+                        CandidateRollNumber = candidate.RollNumber,
                         Marks = candidateMarks.FirstOrDefault() // Take the first match or null
                     }
                 )
