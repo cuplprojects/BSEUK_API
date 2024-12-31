@@ -745,6 +745,7 @@ namespace BSEUK.Controllers
             // Check if the record exists for the given CandidateID and PaperID
             var existingRecord = _context.StudentsMarksObtaineds
                 .FirstOrDefault(s => s.CandidateID == studentsMarksObtained.CandidateID && s.PaperID == studentsMarksObtained.PaperID);
+            var paper = _context.Papers.FirstOrDefault(u => u.PaperID == studentsMarksObtained.PaperID);
 
             if (existingRecord != null)
             {
@@ -768,6 +769,14 @@ namespace BSEUK.Controllers
                 existingRecord.TotalMarks = (existingRecord.TheoryPaperMarks ?? 0) +
                                             (existingRecord.InteralMarks ?? 0) +
                                             (existingRecord.PracticalMarks ?? 0);
+                if(existingRecord.TotalMarks>=(paper.TotalMaxMarks/2))
+                {
+                    existingRecord.Status = "Pass";
+                }
+                else
+                {
+                    existingRecord.Status = "Fail";
+                }
 
                 // Save changes to the database
                 _context.Entry(existingRecord).State = EntityState.Modified;
@@ -778,6 +787,15 @@ namespace BSEUK.Controllers
                 studentsMarksObtained.TotalMarks = (studentsMarksObtained.TheoryPaperMarks ?? 0) +
                                                    (studentsMarksObtained.InteralMarks ?? 0) +
                                                    (studentsMarksObtained.PracticalMarks ?? 0);
+
+                if (studentsMarksObtained.TotalMarks >= (paper.TotalMaxMarks / 2))
+                {
+                    studentsMarksObtained.Status = "Pass";
+                }
+                else
+                {
+                    studentsMarksObtained.Status = "Fail";
+                }
 
                 // Add a new record if no existing record is found
                 _context.StudentsMarksObtaineds.Add(studentsMarksObtained);
