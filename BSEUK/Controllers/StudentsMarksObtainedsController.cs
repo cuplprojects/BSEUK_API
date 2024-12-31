@@ -31,16 +31,56 @@ namespace BSEUK.Controllers
             return await _context.StudentsMarksObtaineds.ToListAsync();
         }
 
-        [HttpGet("GetStudentPaperMarks/{studentId}/{paperID}")]
-        public async Task<ActionResult<StudentsMarksObtained>> GetStudentPaperMarks(int studentId, int paperID)
+        [HttpGet("GetStudentPaperMarks/{paperID}")]
+        public async Task<ActionResult<IEnumerable<object>>> GetStudentPaperMarks(int paperID)
         {
-            var marks = _context.StudentsMarksObtaineds.FirstOrDefault(u => u.CandidateID == studentId && u.PaperID == paperID);
-            if (marks == null)
+            // Fetch the paper details based on paperID
+            var paper = await _context.Papers.FirstOrDefaultAsync(u => u.PaperID == paperID);
+            if (paper == null)
             {
-                return NotFound();
+                return NotFound("Paper not found.");
             }
-            return marks;
+
+            string paperCode = paper.PaperCode.ToString();
+
+            // Fetch all candidates and filter in-memory for those who opted for the specified paper
+            var candidates = await _context.Candidates.ToListAsync(); // Bring candidates into memory
+            var filteredCandidates = candidates
+                .Where(u => u.PapersOpted.Split(',').Contains(paperCode))
+                .Select(c => new { c.CandidateID, c.CandidateName }) // Include additional candidate details if needed
+                .ToList();
+
+            if (!filteredCandidates.Any())
+            {
+                return NotFound("No candidates found for the specified paper.");
+            }
+
+            // Fetch marks for all the candidates for the specified paper
+            var marks = await _context.StudentsMarksObtaineds
+                .Where(u => filteredCandidates.Select(c => c.CandidateID).Contains(u.CandidateID) && u.PaperID == paperID)
+                .ToListAsync();
+
+            // Perform a left join in-memory
+            var result = filteredCandidates
+                .GroupJoin(
+                    marks,
+                    candidate => candidate.CandidateID,
+                    mark => mark.CandidateID,
+                    (candidate, candidateMarks) => new
+                    {
+                        CandidateID = candidate.CandidateID,
+                        CandidateName = candidate.CandidateName,
+                        Marks = candidateMarks.FirstOrDefault() // Take the first match or null
+                    }
+                )
+                .ToList();
+
+            return Ok(result);
         }
+
+
+
+
 
 
         // GET: api/StudentsMarksObtaineds/5
