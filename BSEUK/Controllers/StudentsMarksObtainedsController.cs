@@ -43,12 +43,18 @@ namespace BSEUK.Controllers
 
             string paperCode = paper.PaperCode.ToString();
 
-            // Fetch all candidates and filter in-memory for those who opted for the specified paper
+            // Fetch all candidates
             var candidates = await _context.Candidates.ToListAsync(); // Bring candidates into memory
-            var filteredCandidates = candidates
-                .Where(u => u.PapersOpted.Split(',').Contains(paperCode))
-                .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber }) // Include additional candidate details if needed
-                .ToList();
+
+            // Check PaperType and conditionally filter candidates
+            var filteredCandidates = paper.PaperType == 1
+                ? candidates
+                    .Where(u => u.PapersOpted.Split(',').Contains(paperCode))
+                    .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber }) // Include additional candidate details if needed
+                    .ToList()
+                : candidates
+                    .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber })
+                    .ToList();
 
             if (!filteredCandidates.Any())
             {
@@ -71,6 +77,7 @@ namespace BSEUK.Controllers
                         CandidateID = candidate.CandidateID,
                         CandidateName = candidate.CandidateName,
                         CandidateRollNumber = candidate.RollNumber,
+                        PaperType = paper.PaperType,
                         Marks = candidateMarks.FirstOrDefault() // Take the first match or null
                     }
                 )
@@ -78,6 +85,7 @@ namespace BSEUK.Controllers
 
             return Ok(result);
         }
+
 
 
 
