@@ -87,7 +87,78 @@ namespace BSEUK.Controllers
         }
 
 
+        [HttpGet("GetAllYearsResult/{rollNumber}")]
+        public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
+        {
+            var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).ToListAsync();
+            if (!candidates.Any())
+            {
+                return NotFound($"No Student found with this Roll Number: {rollNumber}");
+            }
 
+            var results = new List<object>();
+
+            foreach (var can in candidates)
+            {
+                // Split the comma-separated paper codes into a list
+                var optedPaperCodes = can.PapersOpted.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+                // Calculate totals considering the PaperType condition
+                var TheoryTotal = await _context.Papers
+                    .Where(u => u.SemID == can.SemID &&
+                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                    .SumAsync(u => u.TheoryPaperMaxMarks);
+
+                var PracticalTotal = await _context.Papers
+                    .Where(u => u.SemID == can.SemID &&
+                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                    .SumAsync(u => u.PracticalMaxMarks);
+
+                var InternalTotal = await _context.Papers
+                    .Where(u => u.SemID == can.SemID &&
+                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                    .SumAsync(u => u.InteralMaxMarks);
+
+                var papertotals = new List<object>();
+                // Summation of Theory, Internal, and Practical marks
+                var theoryMarks = await _context.StudentsMarksObtaineds
+                    .Where(u => u.CandidateID == can.CandidateID)
+                    .SumAsync(u => u.TheoryPaperMarks);
+
+
+                var internalMarks = await _context.StudentsMarksObtaineds
+                    .Where(u => u.CandidateID == can.CandidateID)
+                    .SumAsync(u => u.InteralMarks);
+
+                var practicalMarks = await _context.StudentsMarksObtaineds
+                    .Where(u => u.CandidateID == can.CandidateID)
+                    .SumAsync(u => u.PracticalMarks);
+
+                var OverallTotalMarks = theoryMarks + internalMarks + practicalMarks;
+                var OverallTotalMaxMarks = TheoryTotal + PracticalTotal + InternalTotal;
+
+                var Status = OverallTotalMarks >= (OverallTotalMaxMarks / 2) ? "Pass" : "Fail";
+
+                results.Add(new
+                {
+                    CandidateId = can.CandidateID,
+                    CandidateName = can.CandidateName,
+                    SemID = can.SemID,
+                    RollNumber = can.RollNumber,
+                    TotalTheoryMaxMarks = TheoryTotal,
+                    TotalTheoryMarks = theoryMarks,
+                    TotalInternalMaxMarks = InternalTotal,
+                    TotalInternalMarks = internalMarks,
+                    TotalPracticalMaxMarks = PracticalTotal,
+                    TotalPracticalMarks = practicalMarks,
+                    OverallTotalMarks,
+                    OverallTotalMaxMarks,
+                    Status
+                });
+            }
+
+            return Ok(results);
+        }
 
 
 
