@@ -335,6 +335,7 @@ namespace BSEUK.Controllers
                         marks.InteralMarks,
                         marks.PracticalMarks,
                         paper.PaperName,
+                        paper.PaperCode,
                         paper.TheoryPaperMaxMarks,
                         paper.PracticalMaxMarks,
                         paper.InteralMaxMarks
@@ -354,6 +355,7 @@ namespace BSEUK.Controllers
         s.SmoID,
         s.CandidateID,
         s.PaperID,
+        s.PaperCode,
         s.PaperName,
         s.PaperType,
         TheoryPaperMarks = s.TheoryPaperMarks ?? 0,
@@ -372,6 +374,7 @@ namespace BSEUK.Controllers
         r.PaperID,
         r.PaperName,
         r.PaperType,
+        r.PaperCode,
         r.TheoryPaperMarks,
         r.InternalMarks,
         r.PracticalMarks,
