@@ -71,6 +71,7 @@ namespace BSEUK.Controllers
                         CandidateID = candidate.CandidateID,
                         CandidateName = candidate.CandidateName,
                         CandidateRollNumber = candidate.RollNumber,
+                        PaperType = paper.PaperType,
                         Marks = candidateMarks.FirstOrDefault() // Take the first match or null
                     }
                 )
