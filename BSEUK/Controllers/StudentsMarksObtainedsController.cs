@@ -44,7 +44,7 @@ namespace BSEUK.Controllers
             string paperCode = paper.PaperCode.ToString();
 
             // Fetch all candidates
-            var candidates = await _context.Candidates.OrderBy(u=>u.SemID).ToListAsync(); // Bring candidates into memory
+            var candidates = await _context.Candidates.ToListAsync(); // Bring candidates into memory
 
             // Check PaperType and conditionally filter candidates
             var filteredCandidates = paper.PaperType == 1
@@ -88,10 +88,10 @@ namespace BSEUK.Controllers
         }
 
 
-        /*[HttpGet("GetAllYearsResult/{rollNumber}")]
+/*        [HttpGet("GetAllYearsResult/{rollNumber}")]
         public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
         {
-            var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).ToListAsync();
+            var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).OrderBy(u=>u.SemID).ToListAsync();
             if (!candidates.Any())
             {
                 return NotFound($"No Student found with this Roll Number: {rollNumber}");
@@ -165,7 +165,7 @@ namespace BSEUK.Controllers
         [HttpGet("GetAllYearsResult/{rollNumber}")]
         public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
         {
-            var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).ToListAsync();
+            var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).OrderBy(u=>u.SemID).ToListAsync();
             if (!candidates.Any())
             {
                 return NotFound($"No Student found with this Roll Number: {rollNumber}");
@@ -191,6 +191,8 @@ namespace BSEUK.Controllers
                     .Where(u => u.SemID == can.SemID &&
                                 (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
                     .SumAsync(u => u.InteralMaxMarks);
+
+
 
                 var theoryMarks = await _context.StudentsMarksObtaineds
                     .Where(u => u.CandidateID == can.CandidateID)
@@ -228,16 +230,18 @@ namespace BSEUK.Controllers
             }
 
             // Calculate totals from the results
-            var totalTheoryMarks = results.Sum(r => r.TotalTheoryMarks);
-            var totalInternalMarks = results.Sum(r => r.TotalInternalMarks);
-            var totalPracticalMarks = results.Sum(r => r.TotalPracticalMarks);
+            var totalTheoryMarks = results.Where(u=>u.SemID != 4).Sum(r => r.TotalTheoryMaxMarks);
+            var totalInternalMarks = results.Where(u => u.SemID != 4).Sum(r => r.TotalInternalMaxMarks);
+            var totalSemMarksforInternal = totalTheoryMarks + totalInternalMarks;
+            var totalPracticalMarks = results.Sum(r => r.TotalPracticalMaxMarks) + results.Where(u=>u.SemID == 4).Sum(r=>r.TotalTheoryMaxMarks) + results.Where(u => u.SemID == 4).Sum(r => r.TotalInternalMaxMarks);
+            var total = totalSemMarksforInternal + totalPracticalMarks;
 
             return Ok(new
             {
                 Results = results,
-                TotalTheoryMarks = totalTheoryMarks,
-                TotalInternalMarks = totalInternalMarks,
-                TotalPracticalMarks = totalPracticalMarks
+                SemMarks = totalSemMarksforInternal,
+                TotalPracticalMarks = totalPracticalMarks,
+                Total = total
             });
         }
 
