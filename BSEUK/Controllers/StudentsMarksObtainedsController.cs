@@ -44,15 +44,16 @@ namespace BSEUK.Controllers
             string paperCode = paper.PaperCode.ToString();
 
             // Fetch all candidates
-            var candidates = await _context.Candidates.ToListAsync(); // Bring candidates into memory
+            var candidates = await _context.Candidates.OrderBy(u=>u.SemID).ToListAsync(); // Bring candidates into memory
 
             // Check PaperType and conditionally filter candidates
             var filteredCandidates = paper.PaperType == 1
                 ? candidates
-                    .Where(u => u.PapersOpted.Split(',').Contains(paperCode))
+                    .Where(u => u.PapersOpted.Split(',').Contains(paperCode) && u.SemID == paper.SemID)
                     .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber }) // Include additional candidate details if needed
                     .ToList()
                 : candidates
+                    .Where(u=>u.SemID == paper.SemID)
                     .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber })
                     .ToList();
 
@@ -87,7 +88,7 @@ namespace BSEUK.Controllers
         }
 
 
-        [HttpGet("GetAllYearsResult/{rollNumber}")]
+        /*[HttpGet("GetAllYearsResult/{rollNumber}")]
         public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
         {
             var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).ToListAsync();
@@ -158,7 +159,88 @@ namespace BSEUK.Controllers
             }
 
             return Ok(results);
+        }*/
+
+
+        [HttpGet("GetAllYearsResult/{rollNumber}")]
+        public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
+        {
+            var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).ToListAsync();
+            if (!candidates.Any())
+            {
+                return NotFound($"No Student found with this Roll Number: {rollNumber}");
+            }
+
+            var results = new List<dynamic>();
+
+            foreach (var can in candidates)
+            {
+                var optedPaperCodes = can.PapersOpted.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+                var TheoryTotal = await _context.Papers
+                    .Where(u => u.SemID == can.SemID &&
+                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                    .SumAsync(u => u.TheoryPaperMaxMarks);
+
+                var PracticalTotal = await _context.Papers
+                    .Where(u => u.SemID == can.SemID &&
+                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                    .SumAsync(u => u.PracticalMaxMarks);
+
+                var InternalTotal = await _context.Papers
+                    .Where(u => u.SemID == can.SemID &&
+                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                    .SumAsync(u => u.InteralMaxMarks);
+
+                var theoryMarks = await _context.StudentsMarksObtaineds
+                    .Where(u => u.CandidateID == can.CandidateID)
+                    .SumAsync(u => u.TheoryPaperMarks);
+
+                var internalMarks = await _context.StudentsMarksObtaineds
+                    .Where(u => u.CandidateID == can.CandidateID)
+                    .SumAsync(u => u.InteralMarks);
+
+                var practicalMarks = await _context.StudentsMarksObtaineds
+                    .Where(u => u.CandidateID == can.CandidateID)
+                    .SumAsync(u => u.PracticalMarks);
+
+                var OverallTotalMarks = theoryMarks + internalMarks + practicalMarks;
+                var OverallTotalMaxMarks = TheoryTotal + PracticalTotal + InternalTotal;
+
+                var Status = OverallTotalMarks >= (OverallTotalMaxMarks / 2) ? "Pass" : "Fail";
+
+                results.Add(new
+                {
+                    CandidateId = can.CandidateID,
+                    CandidateName = can.CandidateName,
+                    SemID = can.SemID,
+                    RollNumber = can.RollNumber,
+                    TotalTheoryMaxMarks = TheoryTotal,
+                    TotalTheoryMarks = theoryMarks,
+                    TotalInternalMaxMarks = InternalTotal,
+                    TotalInternalMarks = internalMarks,
+                    TotalPracticalMaxMarks = PracticalTotal,
+                    TotalPracticalMarks = practicalMarks,
+                    OverallTotalMarks,
+                    OverallTotalMaxMarks,
+                    Status
+                });
+            }
+
+            // Calculate totals from the results
+            var totalTheoryMarks = results.Sum(r => r.TotalTheoryMarks);
+            var totalInternalMarks = results.Sum(r => r.TotalInternalMarks);
+            var totalPracticalMarks = results.Sum(r => r.TotalPracticalMarks);
+
+            return Ok(new
+            {
+                Results = results,
+                TotalTheoryMarks = totalTheoryMarks,
+                TotalInternalMarks = totalInternalMarks,
+                TotalPracticalMarks = totalPracticalMarks
+            });
         }
+
 
 
 
