@@ -18,6 +18,7 @@ namespace BSEUK.Data
         public DbSet<Category> Categories{ get; set; }
         public DbSet<Log> MarksLogs{ get; set; }
         public DbSet<LockStatus> LockStatuses{ get; set; }
+        public DbSet<Role> Roles{ get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {

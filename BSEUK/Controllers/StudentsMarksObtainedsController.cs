@@ -975,6 +975,15 @@ namespace BSEUK.Controllers
                         _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, userID);
                 }
 
+                if (studentsMarksObtained.IsAbsent.HasValue)
+                {
+                    bool oldMarks = existingRecord.IsAbsent.Value;
+                    bool newMarks = studentsMarksObtained.IsAbsent.Value;
+                    existingRecord.IsAbsent = studentsMarksObtained.IsAbsent;
+                    if (oldMarks != newMarks)
+                        _loggerService.LogChangeInAbsent($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, userID);
+                }
+
                 // Calculate TotalMarks
                 existingRecord.TotalMarks = (existingRecord.TheoryPaperMarks ?? 0) +
                                             (existingRecord.InteralMarks ?? 0) +
@@ -1035,7 +1044,7 @@ namespace BSEUK.Controllers
         }
 
 
-        [HttpPost("Audit")]
+        /*[HttpPost("Audit")]
         public async Task<ActionResult<object>> AuditSem(inputforGCR info)
         {
             List<object> remarks = new List<object>();
@@ -1075,7 +1084,69 @@ namespace BSEUK.Controllers
                 }
             }
             return Ok(remarks);
+        }*/
+
+        [HttpPost("Audit")]
+        public async Task<ActionResult<object>> AuditSem(inputforGCR info)
+        {
+            List<object> remarks = new List<object>();
+            var candidates = await _context.Candidates
+                .Where(u => u.SemID == info.SemID && u.SesID == info.SesID)
+                .OrderBy(u => u.CandidateID)
+                .ToListAsync();
+
+            if (!candidates.Any())
+            {
+                return NotFound();
+            }
+
+            foreach (var can in candidates)
+            {
+                var optedPaperCodes = can.PapersOpted.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                var markslist = await _context.StudentsMarksObtaineds
+                    .Where(u => u.CandidateID == can.CandidateID)
+                    .ToListAsync();
+
+                var papers = await _context.Papers
+                    .Where(u => u.SemID == can.SemID &&
+                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                    .ToListAsync();
+
+                int lengthOfMarkList = markslist.Count;
+                int lengthOfPaperList = papers.Count;
+
+                Console.WriteLine($"Candidate: {can.CandidateID}");
+                Console.WriteLine($"MarkList Length: {lengthOfMarkList}");
+                Console.WriteLine($"PaperList Length: {lengthOfPaperList}");
+
+                if (lengthOfMarkList == lengthOfPaperList)
+                {
+                    remarks.Add(new
+                    {
+                        RollNumber = can.RollNumber,
+                        CanGenerateCertificate = true
+                    });
+                }
+                else
+                {
+                    // Get the list of paper codes for which marks are missing
+                    var papersWithMissingMarks = papers
+                        .Where(p => !markslist.Any(m => m.PaperID == p.PaperID))
+                        .Select(p => p.PaperName)
+                        .ToList();
+
+                    remarks.Add(new
+                    {
+                        RollNumber = can.RollNumber,
+                        CanGenerateCertificate = false,
+                        MissingPapers = papersWithMissingMarks
+                    });
+                }
+            }
+
+            return Ok(remarks);
         }
+
 
         [HttpPost("AuditforSingle")]
         public async Task<ActionResult<bool>> AuditRollNumberforCertificate(studentinfo info)

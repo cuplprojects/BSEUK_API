@@ -26,5 +26,20 @@ namespace BSEUK.Services
             _appDbContext.MarksLogs.Add(log);
             _appDbContext.SaveChanges();
         }
+
+        public void LogChangeInAbsent(string message, string category, bool oldMarks, bool newMarks, int userID)
+        {
+            var log = new Log
+            {
+                Message = message,
+                Category = category,
+                oldMarks = oldMarks==true?1:0,
+                newMarks = newMarks==true?1:0,
+                UserID = userID
+
+            };
+            _appDbContext.MarksLogs.Add(log);
+            _appDbContext.SaveChanges();
+        }
     }
 }

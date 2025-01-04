@@ -3,17 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BSEUK.Models
 {
-    public class User
+    public class Role
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int UserID { get; set; }
-
-        public string Name { get; set; }
-
-        public string Email { get; set; }
-
         public int RoleID { get; set; }
 
+        public string RoleName { get; set; }
     }
 }
