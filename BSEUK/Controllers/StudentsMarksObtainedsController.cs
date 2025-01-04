@@ -10,6 +10,7 @@ using CrystalDecisions.Shared;
 using System.Data;
 using BSEUK.Services;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 
 
@@ -930,6 +931,17 @@ namespace BSEUK.Controllers
             var existingRecord = _context.StudentsMarksObtaineds
                 .FirstOrDefault(s => s.CandidateID == studentsMarksObtained.CandidateID && s.PaperID == studentsMarksObtained.PaperID);
             var paper = await _context.Papers.FirstOrDefaultAsync(u => u.PaperID == studentsMarksObtained.PaperID);
+            int userID = 0;
+            var userIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name);
+
+            if (userIdClaim != null)
+            {
+                Console.WriteLine($"Retrieved Claim Value: {userIdClaim.Value}");
+                if (int.TryParse(userIdClaim.Value, out userID))
+                {
+                    Console.WriteLine($"User ID: {userID}");
+                }
+            }
 
             if (existingRecord != null)
             {
@@ -941,7 +953,7 @@ namespace BSEUK.Controllers
                     existingRecord.TheoryPaperMarks = studentsMarksObtained.TheoryPaperMarks;
                     if (oldMarks != newMarks)
                     {
-                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Theory", oldMarks, newMarks,1);
+                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Theory", oldMarks, newMarks, userID);
                     }
                 }
 
@@ -951,7 +963,7 @@ namespace BSEUK.Controllers
                     int newMarks = studentsMarksObtained.InteralMarks.Value;
                     existingRecord.InteralMarks = studentsMarksObtained.InteralMarks;
                     if(oldMarks!=newMarks)
-                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Internal", oldMarks, newMarks, 1);
+                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Internal", oldMarks, newMarks, userID);
                 }
 
                 if (studentsMarksObtained.PracticalMarks.HasValue && paper.PaperType != 1)
@@ -960,7 +972,7 @@ namespace BSEUK.Controllers
                     int newMarks = studentsMarksObtained.PracticalMarks.Value;
                     existingRecord.PracticalMarks = studentsMarksObtained.PracticalMarks;
                     if(oldMarks!=newMarks)
-                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, 1);
+                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, userID);
                 }
 
                 // Calculate TotalMarks
