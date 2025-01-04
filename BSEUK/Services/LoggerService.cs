@@ -19,7 +19,8 @@ namespace BSEUK.Services
                 Message = message,
                 Category = category,
                 oldMarks = oldMarks,
-                newMarks = newMarks
+                newMarks = newMarks,
+                UserID = userID
 
             };
             _appDbContext.MarksLogs.Add(log);

@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BSEUK.Data;
 using BSEUK.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BSEUK.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PaperTypesController : ControllerBase
     {
         private readonly AppDbContext _context;
