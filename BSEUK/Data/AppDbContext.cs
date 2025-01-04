@@ -16,6 +16,8 @@ namespace BSEUK.Data
         public DbSet<Group> Groups{ get; set; }
         public DbSet<Institute> Institutes{ get; set; }
         public DbSet<Category> Categories{ get; set; }
+        public DbSet<Log> MarksLogs{ get; set; }
+        public DbSet<LockStatus> LockStatuses{ get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {

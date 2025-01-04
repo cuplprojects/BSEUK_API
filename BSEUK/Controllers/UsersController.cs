@@ -8,11 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using BSEUK.Data;
 using BSEUK.Models;
 using BSEUK.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BSEUK.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _context;

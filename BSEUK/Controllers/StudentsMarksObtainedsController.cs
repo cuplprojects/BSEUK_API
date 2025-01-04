@@ -8,6 +8,8 @@ using QuestPDF.Infrastructure;
 using CrystalDecisions.CrystalReports.Engine;
 using CrystalDecisions.Shared;
 using System.Data;
+using BSEUK.Services;
+using Microsoft.AspNetCore.Authorization;
 
 
 
@@ -15,13 +17,16 @@ namespace BSEUK.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class StudentsMarksObtainedsController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly ILoggerService _loggerService;
 
-        public StudentsMarksObtainedsController(AppDbContext context)
+        public StudentsMarksObtainedsController(AppDbContext context, ILoggerService loggerService)
         {
             _context = context;
+            _loggerService = loggerService;
         }
 
         // GET: api/StudentsMarksObtaineds
@@ -911,27 +916,51 @@ namespace BSEUK.Controllers
         [HttpPost]
         public async Task<ActionResult<StudentsMarksObtained>> PostStudentsMarksObtained(StudentsMarksObtained studentsMarksObtained)
         {
+            var can = await _context.Candidates.FirstOrDefaultAsync(u => u.CandidateID == studentsMarksObtained.CandidateID);
+            var lockstatus = await _context.LockStatuses.FirstOrDefaultAsync(u => u.SesID == can.SesID && u.SemID == can.SemID);
+            if (lockstatus != null)
+            {
+                if (lockstatus?.IsLocked == true)
+                {
+                    return BadRequest("Database is locked");
+                }
+
+            }
             // Check if the record exists for the given CandidateID and PaperID
             var existingRecord = _context.StudentsMarksObtaineds
                 .FirstOrDefault(s => s.CandidateID == studentsMarksObtained.CandidateID && s.PaperID == studentsMarksObtained.PaperID);
-            var paper = _context.Papers.FirstOrDefault(u => u.PaperID == studentsMarksObtained.PaperID);
+            var paper = await _context.Papers.FirstOrDefaultAsync(u => u.PaperID == studentsMarksObtained.PaperID);
 
             if (existingRecord != null)
             {
                 // Update only the fields that have been provided (not null)
-                if (studentsMarksObtained.TheoryPaperMarks.HasValue)
+                if (studentsMarksObtained.TheoryPaperMarks.HasValue && paper.PaperType == 1)
                 {
+                    int oldMarks = existingRecord.TheoryPaperMarks.Value;
+                    int newMarks = studentsMarksObtained.TheoryPaperMarks.Value;
                     existingRecord.TheoryPaperMarks = studentsMarksObtained.TheoryPaperMarks;
+                    if (oldMarks != newMarks)
+                    {
+                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Theory", oldMarks, newMarks,1);
+                    }
                 }
 
-                if (studentsMarksObtained.InteralMarks.HasValue)
+                if (studentsMarksObtained.InteralMarks.HasValue && paper.PaperType == 1)
                 {
+                    int oldMarks = existingRecord.InteralMarks.Value;
+                    int newMarks = studentsMarksObtained.InteralMarks.Value;
                     existingRecord.InteralMarks = studentsMarksObtained.InteralMarks;
+                    if(oldMarks!=newMarks)
+                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Internal", oldMarks, newMarks, 1);
                 }
 
-                if (studentsMarksObtained.PracticalMarks.HasValue)
+                if (studentsMarksObtained.PracticalMarks.HasValue && paper.PaperType != 1)
                 {
+                    int oldMarks = existingRecord.PracticalMarks.Value;
+                    int newMarks = studentsMarksObtained.PracticalMarks.Value;
                     existingRecord.PracticalMarks = studentsMarksObtained.PracticalMarks;
+                    if(oldMarks!=newMarks)
+                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, 1);
                 }
 
                 // Calculate TotalMarks
@@ -998,7 +1027,7 @@ namespace BSEUK.Controllers
         public async Task<ActionResult<object>> AuditSem(inputforGCR info)
         {
             List<object> remarks = new List<object>();
-            var candidates = await _context.Candidates.Where(u => u.SemID == info.SemID && u.SesID == info.SesID).OrderBy(u=>u.CandidateID).ToListAsync();
+            var candidates = await _context.Candidates.Where(u => u.SemID == info.SemID && u.SesID == info.SesID).OrderBy(u => u.CandidateID).ToListAsync();
             if (!candidates.Any())
             {
                 return NotFound();
@@ -1016,7 +1045,7 @@ namespace BSEUK.Controllers
                 Console.WriteLine($"Candidate: {can.CandidateID}");
                 Console.WriteLine($"MarkList Length: " + lenghtofmarklist);
                 Console.WriteLine($"PaperList Lenght: " + lengthofpaperlist);
-                if(lenghtofmarklist == lengthofpaperlist)
+                if (lenghtofmarklist == lengthofpaperlist)
                 {
                     remarks.Add(new
                     {
@@ -1032,12 +1061,33 @@ namespace BSEUK.Controllers
                         CanGenerateCertificate = false
                     });
                 }
-
-
             }
-
-
             return Ok(remarks);
+        }
+
+        [HttpPost("AuditforSingle")]
+        public async Task<ActionResult<bool>> AuditRollNumberforCertificate(studentinfo info)
+        {
+            var can = await _context.Candidates.FirstOrDefaultAsync(u => u.RollNumber == info.RollNumber && u.SemID == info.SemesterId && u.SesID == info.SessionId);
+            if (can == null)
+            {
+                return NotFound(false);
+            }
+            var optedPaperCodes = can.PapersOpted.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var markslist = await _context.StudentsMarksObtaineds.Where(u => u.CandidateID == can.CandidateID).ToListAsync();
+            var papers = await _context.Papers
+                    .Where(u => u.SemID == can.SemID &&
+                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString())))).ToListAsync();
+            int lenghtofmarklist = markslist.Count;
+            int lengthofpaperlist = papers.Count;
+            if (lenghtofmarklist == lengthofpaperlist)
+            {
+                return Ok(true);
+            }
+            else
+            {
+                return Ok(false);
+            }
         }
 
         private bool StudentsMarksObtainedExists(int id)

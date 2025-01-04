@@ -14,47 +14,47 @@ namespace BSEUK.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class SessionsController : ControllerBase
+    public class LockStatusController : ControllerBase
     {
         private readonly AppDbContext _context;
 
-        public SessionsController(AppDbContext context)
+        public LockStatusController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: api/Sessions
+        // GET: api/LockStatus
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Session>>> GetSessions()
+        public async Task<ActionResult<IEnumerable<LockStatus>>> GetLockStatuses()
         {
-            return await _context.Sessions.ToListAsync();
+            return await _context.LockStatuses.ToListAsync();
         }
 
-        // GET: api/Sessions/5
+        // GET: api/LockStatus/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Session>> GetSession(int id)
+        public async Task<ActionResult<LockStatus>> GetLockStatus(int id)
         {
-            var session = await _context.Sessions.FindAsync(id);
+            var lockStatus = await _context.LockStatuses.FindAsync(id);
 
-            if (session == null)
+            if (lockStatus == null)
             {
                 return NotFound();
             }
 
-            return session;
+            return lockStatus;
         }
 
-        // PUT: api/Sessions/5
+        // PUT: api/LockStatus/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutSession(int id, Session session)
+        public async Task<IActionResult> PutLockStatus(int id, LockStatus lockStatus)
         {
-            if (id != session.SesID)
+            if (id != lockStatus.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(session).State = EntityState.Modified;
+            _context.Entry(lockStatus).State = EntityState.Modified;
 
             try
             {
@@ -62,7 +62,7 @@ namespace BSEUK.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!SessionExists(id))
+                if (!LockStatusExists(id))
                 {
                     return NotFound();
                 }
@@ -75,36 +75,36 @@ namespace BSEUK.Controllers
             return NoContent();
         }
 
-        // POST: api/Sessions
+        // POST: api/LockStatus
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Session>> PostSession(Session session)
+        public async Task<ActionResult<LockStatus>> PostLockStatus(LockStatus lockStatus)
         {
-            _context.Sessions.Add(session);
+            _context.LockStatuses.Add(lockStatus);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetSession", new { id = session.SesID }, session);
+            return CreatedAtAction("GetLockStatus", new { id = lockStatus.Id }, lockStatus);
         }
 
-        // DELETE: api/Sessions/5
+        // DELETE: api/LockStatus/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSession(int id)
+        public async Task<IActionResult> DeleteLockStatus(int id)
         {
-            var session = await _context.Sessions.FindAsync(id);
-            if (session == null)
+            var lockStatus = await _context.LockStatuses.FindAsync(id);
+            if (lockStatus == null)
             {
                 return NotFound();
             }
 
-            _context.Sessions.Remove(session);
+            _context.LockStatuses.Remove(lockStatus);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool SessionExists(int id)
+        private bool LockStatusExists(int id)
         {
-            return _context.Sessions.Any(e => e.SesID == id);
+            return _context.LockStatuses.Any(e => e.Id == id);
         }
     }
 }
