@@ -53,7 +53,7 @@ namespace BSEUK.Controllers
                     .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber }) // Include additional candidate details if needed
                     .ToList()
                 : candidates
-                    .Where(u=>u.SemID == paper.SemID)
+                    .Where(u => u.SemID == paper.SemID)
                     .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber })
                     .ToList();
 
@@ -88,84 +88,84 @@ namespace BSEUK.Controllers
         }
 
 
-/*        [HttpGet("GetAllYearsResult/{rollNumber}")]
-        public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
-        {
-            var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).OrderBy(u=>u.SemID).ToListAsync();
-            if (!candidates.Any())
-            {
-                return NotFound($"No Student found with this Roll Number: {rollNumber}");
-            }
-
-            var results = new List<object>();
-
-            foreach (var can in candidates)
-            {
-                // Split the comma-separated paper codes into a list
-                var optedPaperCodes = can.PapersOpted.Split(',', StringSplitOptions.RemoveEmptyEntries);
-
-                // Calculate totals considering the PaperType condition
-                var TheoryTotal = await _context.Papers
-                    .Where(u => u.SemID == can.SemID &&
-                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
-                    .SumAsync(u => u.TheoryPaperMaxMarks);
-
-                var PracticalTotal = await _context.Papers
-                    .Where(u => u.SemID == can.SemID &&
-                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
-                    .SumAsync(u => u.PracticalMaxMarks);
-
-                var InternalTotal = await _context.Papers
-                    .Where(u => u.SemID == can.SemID &&
-                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
-                    .SumAsync(u => u.InteralMaxMarks);
-
-                var papertotals = new List<object>();
-                // Summation of Theory, Internal, and Practical marks
-                var theoryMarks = await _context.StudentsMarksObtaineds
-                    .Where(u => u.CandidateID == can.CandidateID)
-                    .SumAsync(u => u.TheoryPaperMarks);
-
-
-                var internalMarks = await _context.StudentsMarksObtaineds
-                    .Where(u => u.CandidateID == can.CandidateID)
-                    .SumAsync(u => u.InteralMarks);
-
-                var practicalMarks = await _context.StudentsMarksObtaineds
-                    .Where(u => u.CandidateID == can.CandidateID)
-                    .SumAsync(u => u.PracticalMarks);
-
-                var OverallTotalMarks = theoryMarks + internalMarks + practicalMarks;
-                var OverallTotalMaxMarks = TheoryTotal + PracticalTotal + InternalTotal;
-
-                var Status = OverallTotalMarks >= (OverallTotalMaxMarks / 2) ? "Pass" : "Fail";
-
-                results.Add(new
+        /*        [HttpGet("GetAllYearsResult/{rollNumber}")]
+                public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
                 {
-                    CandidateId = can.CandidateID,
-                    CandidateName = can.CandidateName,
-                    SemID = can.SemID,
-                    RollNumber = can.RollNumber,
-                    TotalTheoryMaxMarks = TheoryTotal,
-                    TotalTheoryMarks = theoryMarks,
-                    TotalInternalMaxMarks = InternalTotal,
-                    TotalInternalMarks = internalMarks,
-                    TotalPracticalMaxMarks = PracticalTotal,
-                    TotalPracticalMarks = practicalMarks,
-                    OverallTotalMarks,
-                    OverallTotalMaxMarks,
-                    Status
-                });
-            }
+                    var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).OrderBy(u=>u.SemID).ToListAsync();
+                    if (!candidates.Any())
+                    {
+                        return NotFound($"No Student found with this Roll Number: {rollNumber}");
+                    }
 
-            return Ok(results);
-        }*/
+                    var results = new List<object>();
+
+                    foreach (var can in candidates)
+                    {
+                        // Split the comma-separated paper codes into a list
+                        var optedPaperCodes = can.PapersOpted.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+                        // Calculate totals considering the PaperType condition
+                        var TheoryTotal = await _context.Papers
+                            .Where(u => u.SemID == can.SemID &&
+                                        (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                            .SumAsync(u => u.TheoryPaperMaxMarks);
+
+                        var PracticalTotal = await _context.Papers
+                            .Where(u => u.SemID == can.SemID &&
+                                        (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                            .SumAsync(u => u.PracticalMaxMarks);
+
+                        var InternalTotal = await _context.Papers
+                            .Where(u => u.SemID == can.SemID &&
+                                        (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                            .SumAsync(u => u.InteralMaxMarks);
+
+                        var papertotals = new List<object>();
+                        // Summation of Theory, Internal, and Practical marks
+                        var theoryMarks = await _context.StudentsMarksObtaineds
+                            .Where(u => u.CandidateID == can.CandidateID)
+                            .SumAsync(u => u.TheoryPaperMarks);
+
+
+                        var internalMarks = await _context.StudentsMarksObtaineds
+                            .Where(u => u.CandidateID == can.CandidateID)
+                            .SumAsync(u => u.InteralMarks);
+
+                        var practicalMarks = await _context.StudentsMarksObtaineds
+                            .Where(u => u.CandidateID == can.CandidateID)
+                            .SumAsync(u => u.PracticalMarks);
+
+                        var OverallTotalMarks = theoryMarks + internalMarks + practicalMarks;
+                        var OverallTotalMaxMarks = TheoryTotal + PracticalTotal + InternalTotal;
+
+                        var Status = OverallTotalMarks >= (OverallTotalMaxMarks / 2) ? "Pass" : "Fail";
+
+                        results.Add(new
+                        {
+                            CandidateId = can.CandidateID,
+                            CandidateName = can.CandidateName,
+                            SemID = can.SemID,
+                            RollNumber = can.RollNumber,
+                            TotalTheoryMaxMarks = TheoryTotal,
+                            TotalTheoryMarks = theoryMarks,
+                            TotalInternalMaxMarks = InternalTotal,
+                            TotalInternalMarks = internalMarks,
+                            TotalPracticalMaxMarks = PracticalTotal,
+                            TotalPracticalMarks = practicalMarks,
+                            OverallTotalMarks,
+                            OverallTotalMaxMarks,
+                            Status
+                        });
+                    }
+
+                    return Ok(results);
+                }*/
 
 
         [HttpGet("GetAllYearsResult/{rollNumber}")]
         public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
         {
-            var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).OrderBy(u=>u.SemID).ToListAsync();
+            var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).OrderBy(u => u.SemID).ToListAsync();
             if (!candidates.Any())
             {
                 return NotFound($"No Student found with this Roll Number: {rollNumber}");
@@ -230,10 +230,10 @@ namespace BSEUK.Controllers
             }
 
             // Calculate totals from the results
-            var totalTheoryMarks = results.Where(u=>u.SemID != 4).Sum(r => r.TotalTheoryMaxMarks);
+            var totalTheoryMarks = results.Where(u => u.SemID != 4).Sum(r => r.TotalTheoryMaxMarks);
             var totalInternalMarks = results.Where(u => u.SemID != 4).Sum(r => r.TotalInternalMaxMarks);
             var totalSemMarksforInternal = totalTheoryMarks + totalInternalMarks;
-            var totalPracticalMarks = results.Sum(r => r.TotalPracticalMaxMarks) + results.Where(u=>u.SemID == 4).Sum(r=>r.TotalTheoryMaxMarks) + results.Where(u => u.SemID == 4).Sum(r => r.TotalInternalMaxMarks);
+            var totalPracticalMarks = results.Sum(r => r.TotalPracticalMaxMarks) + results.Where(u => u.SemID == 4).Sum(r => r.TotalTheoryMaxMarks) + results.Where(u => u.SemID == 4).Sum(r => r.TotalInternalMaxMarks);
             var total = totalSemMarksforInternal + totalPracticalMarks;
 
             return Ok(new
@@ -938,7 +938,7 @@ namespace BSEUK.Controllers
                 existingRecord.TotalMarks = (existingRecord.TheoryPaperMarks ?? 0) +
                                             (existingRecord.InteralMarks ?? 0) +
                                             (existingRecord.PracticalMarks ?? 0);
-                if(existingRecord.TotalMarks>=(paper.TotalMaxMarks/2))
+                if ((existingRecord.TheoryPaperMarks >= (paper.TheoryPaperMaxMarks / 2)) && (existingRecord.InteralMarks >= (paper.InteralMaxMarks / 2)) && (existingRecord.PracticalMarks >= (paper.PracticalMaxMarks / 2)) && (existingRecord.TotalMarks >= (paper.TotalMaxMarks / 2)))
                 {
                     existingRecord.Status = "Pass";
                 }
@@ -957,7 +957,7 @@ namespace BSEUK.Controllers
                                                    (studentsMarksObtained.InteralMarks ?? 0) +
                                                    (studentsMarksObtained.PracticalMarks ?? 0);
 
-                if (studentsMarksObtained.TotalMarks >= (paper.TotalMaxMarks / 2))
+                if ((studentsMarksObtained.TheoryPaperMarks >= (paper.TheoryPaperMaxMarks / 2)) && (studentsMarksObtained.InteralMarks >= (paper.InteralMaxMarks / 2)) && (studentsMarksObtained.PracticalMarks >= (paper.PracticalMaxMarks / 2)) && (studentsMarksObtained.TotalMarks >= (paper.TotalMaxMarks / 2)))
                 {
                     studentsMarksObtained.Status = "Pass";
                 }
@@ -991,6 +991,53 @@ namespace BSEUK.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+
+        [HttpPost("Audit")]
+        public async Task<ActionResult<object>> AuditSem(inputforGCR info)
+        {
+            List<object> remarks = new List<object>();
+            var candidates = await _context.Candidates.Where(u => u.SemID == info.SemID && u.SesID == info.SesID).OrderBy(u=>u.CandidateID).ToListAsync();
+            if (!candidates.Any())
+            {
+                return NotFound();
+            }
+            foreach (var can in candidates)
+            {
+
+                var optedPaperCodes = can.PapersOpted.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                var markslist = await _context.StudentsMarksObtaineds.Where(u => u.CandidateID == can.CandidateID).ToListAsync();
+                var papers = await _context.Papers
+                    .Where(u => u.SemID == can.SemID &&
+                                (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString())))).ToListAsync();
+                int lenghtofmarklist = markslist.Count;
+                int lengthofpaperlist = papers.Count;
+                Console.WriteLine($"Candidate: {can.CandidateID}");
+                Console.WriteLine($"MarkList Length: " + lenghtofmarklist);
+                Console.WriteLine($"PaperList Lenght: " + lengthofpaperlist);
+                if(lenghtofmarklist == lengthofpaperlist)
+                {
+                    remarks.Add(new
+                    {
+                        RollNumber = can.RollNumber,
+                        CanGenerateCertificate = true
+                    });
+                }
+                else
+                {
+                    remarks.Add(new
+                    {
+                        RollNumber = can.RollNumber,
+                        CanGenerateCertificate = false
+                    });
+                }
+
+
+            }
+
+
+            return Ok(remarks);
         }
 
         private bool StudentsMarksObtainedExists(int id)
