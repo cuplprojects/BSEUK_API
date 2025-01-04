@@ -8,11 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using BSEUK.Data;
 using BSEUK.Models;
 using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BSEUK.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CandidatesController : ControllerBase
     {
         private readonly AppDbContext _context;
