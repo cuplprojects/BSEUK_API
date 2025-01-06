@@ -558,7 +558,7 @@ namespace BSEUK.Controllers
         r.RowMaxTotal,
         PaperRemarks = r.RowTotal >= (r.RowMaxTotal / 2) ? "उत्तीर्ण" : "असफल"
     })
-    .ToList();
+    .OrderBy(r=>r.PaperID).ToList();
 
 
             // Column-wise totals
