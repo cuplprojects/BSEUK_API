@@ -977,13 +977,19 @@ namespace BSEUK.Controllers
 
                 if (studentsMarksObtained.IsAbsent.HasValue)
                 {
-                    bool oldMarks = existingRecord.IsAbsent.Value;
+                    bool oldMarks = existingRecord.IsAbsent.HasValue ? existingRecord.IsAbsent.Value : false;
                     bool newMarks = studentsMarksObtained.IsAbsent.Value;
                     existingRecord.IsAbsent = studentsMarksObtained.IsAbsent;
                     if (oldMarks != newMarks)
                         _loggerService.LogChangeInAbsent($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, userID);
                 }
 
+                if (studentsMarksObtained.Remark!=null || studentsMarksObtained.Remark !="")
+                {
+                    string oldMarks = existingRecord.Remark==null? "": existingRecord.Remark;
+                    string newMarks = studentsMarksObtained.Remark;
+                    existingRecord.Remark = studentsMarksObtained.Remark;
+                }
                 // Calculate TotalMarks
                 existingRecord.TotalMarks = (existingRecord.TheoryPaperMarks ?? 0) +
                                             (existingRecord.InteralMarks ?? 0) +
