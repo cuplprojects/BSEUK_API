@@ -508,7 +508,8 @@ namespace BSEUK.Controllers
                         paper.PaperCode,
                         paper.TheoryPaperMaxMarks,
                         paper.PracticalMaxMarks,
-                        paper.InteralMaxMarks
+                        paper.InteralMaxMarks,
+                        marks.IsAbsent,
                     }
                 )
                 .ToList();
@@ -528,6 +529,7 @@ namespace BSEUK.Controllers
         s.PaperCode,
         s.PaperName,
         s.PaperType,
+        s.IsAbsent,
         TheoryPaperMarks = s.TheoryPaperMarks ?? 0,
         InternalMarks = s.InteralMarks ?? 0,
         PracticalMarks = s.PracticalMarks ?? 0,
@@ -545,6 +547,7 @@ namespace BSEUK.Controllers
         r.PaperName,
         r.PaperType,
         r.PaperCode,
+        r.IsAbsent,
         r.TheoryPaperMarks,
         r.InternalMarks,
         r.PracticalMarks,
