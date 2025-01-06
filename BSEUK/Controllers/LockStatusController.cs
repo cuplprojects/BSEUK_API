@@ -31,10 +31,10 @@ namespace BSEUK.Controllers
         }
 
         // GET: api/LockStatus/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<LockStatus>> GetLockStatus(int id)
+        [HttpGet("getbysessionandsemester")]
+        public async Task<ActionResult<LockStatus>> GetLockStatus(inputinfo info)
         {
-            var lockStatus = await _context.LockStatuses.FindAsync(id);
+            var lockStatus = await _context.LockStatuses.FirstOrDefaultAsync(u=>u.SemID == info.SemID && u.SesID==info.SesID);
 
             if (lockStatus == null)
             {
@@ -106,5 +106,10 @@ namespace BSEUK.Controllers
         {
             return _context.LockStatuses.Any(e => e.Id == id);
         }
+    }
+    public class inputinfo
+    {
+        public int SesID { get; set; }
+        public int SemID { get; set; }
     }
 }
