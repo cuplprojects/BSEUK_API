@@ -37,11 +37,11 @@ namespace BSEUK.Controllers
             return await _context.StudentsMarksObtaineds.ToListAsync();
         }
 
-        [HttpGet("GetStudentPaperMarks/{paperID}")]
-        public async Task<ActionResult<IEnumerable<object>>> GetStudentPaperMarks(int paperID)
+        [HttpPost("GetStudentPaperMarks")]
+        public async Task<ActionResult<IEnumerable<object>>> GetStudentPaperMarks(paperandses pns)
         {
             // Fetch the paper details based on paperID
-            var paper = await _context.Papers.FirstOrDefaultAsync(u => u.PaperID == paperID);
+            var paper = await _context.Papers.FirstOrDefaultAsync(u => u.PaperID == pns.PaperID);
             if (paper == null)
             {
                 return NotFound("Paper not found.");
@@ -55,7 +55,7 @@ namespace BSEUK.Controllers
             // Check PaperType and conditionally filter candidates
             var filteredCandidates = paper.PaperType == 1
                 ? candidates
-                    .Where(u => u.PapersOpted.Split(',').Contains(paperCode) && u.SemID == paper.SemID)
+                    .Where(u => u.PapersOpted.Split(',').Contains(paperCode) && u.SemID == paper.SemID && u.SesID == pns.SesID)
                     .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber }) // Include additional candidate details if needed
                     .ToList()
                 : candidates
@@ -70,7 +70,7 @@ namespace BSEUK.Controllers
 
             // Fetch marks for all the candidates for the specified paper
             var marks = await _context.StudentsMarksObtaineds
-                .Where(u => filteredCandidates.Select(c => c.CandidateID).Contains(u.CandidateID) && u.PaperID == paperID)
+                .Where(u => filteredCandidates.Select(c => c.CandidateID).Contains(u.CandidateID) && u.PaperID == pns.PaperID)
                 .ToListAsync();
 
             // Perform a left join in-memory
@@ -558,7 +558,7 @@ namespace BSEUK.Controllers
         r.RowMaxTotal,
         PaperRemarks = r.RowTotal >= (r.RowMaxTotal / 2) ? "उत्तीर्ण" : "असफल"
     })
-    .OrderBy(r=>r.PaperID).ToList();
+    .OrderBy(r => r.PaperID).ToList();
 
 
             // Column-wise totals
@@ -967,7 +967,7 @@ namespace BSEUK.Controllers
                     int oldMarks = existingRecord.InteralMarks.Value;
                     int newMarks = studentsMarksObtained.InteralMarks.Value;
                     existingRecord.InteralMarks = studentsMarksObtained.InteralMarks;
-                    if(oldMarks!=newMarks)
+                    if (oldMarks != newMarks)
                         _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Internal", oldMarks, newMarks, userID);
                 }
 
@@ -976,7 +976,7 @@ namespace BSEUK.Controllers
                     int oldMarks = existingRecord.PracticalMarks.Value;
                     int newMarks = studentsMarksObtained.PracticalMarks.Value;
                     existingRecord.PracticalMarks = studentsMarksObtained.PracticalMarks;
-                    if(oldMarks!=newMarks)
+                    if (oldMarks != newMarks)
                         _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, userID);
                 }
 
@@ -989,9 +989,9 @@ namespace BSEUK.Controllers
                         _loggerService.LogChangeInAbsent($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, userID);
                 }
 
-                if (studentsMarksObtained.Remark!=null || studentsMarksObtained.Remark !="")
+                if (studentsMarksObtained.Remark != null || studentsMarksObtained.Remark != "")
                 {
-                    string oldMarks = existingRecord.Remark==null? "": existingRecord.Remark;
+                    string oldMarks = existingRecord.Remark == null ? "" : existingRecord.Remark;
                     string newMarks = studentsMarksObtained.Remark;
                     existingRecord.Remark = studentsMarksObtained.Remark;
                 }
@@ -1189,6 +1189,14 @@ namespace BSEUK.Controllers
             return _context.StudentsMarksObtaineds.Any(e => e.SmoID == id);
         }
     }
+
+    public class paperandses
+    {
+        public int PaperID { get; set; }
+
+        public int SesID { get; set; }
+    }
+
 
     public class inputforGCR
     {
