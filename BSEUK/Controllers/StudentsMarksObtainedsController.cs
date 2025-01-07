@@ -574,6 +574,8 @@ namespace BSEUK.Controllers
                 TotalMaxMarks = scoresWithRowTotal.Sum(s => s.RowMaxTotal)
             };
 
+            var overallRemarks = scoresWithRowTotal.Any(s => s.PaperRemarks == "असफल") ? "असफल" : "उत्तीर्ण";
+
             // Combine the results
             var result = new
             {
@@ -598,7 +600,7 @@ namespace BSEUK.Controllers
                         TotalPracticalMaxMarks = columnWiseTotals.MaxPracticalMarks,
                         TotalPracticalMarksObtained = columnWiseTotals.TotalPracticalMarks,
                         totalMarksObtained = columnWiseTotals.TotalCandidateMarks,
-                        remarks = columnWiseTotals.TotalCandidateMarks >= (columnWiseTotals.TotalMaxMarks / 2) ? "उत्तीर्ण" : "असफल",
+                        remarks = overallRemarks,
                         marksDetails = scoresWithRowTotal
                     }
                 },
