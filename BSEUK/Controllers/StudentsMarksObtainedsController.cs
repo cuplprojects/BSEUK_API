@@ -18,7 +18,6 @@ namespace BSEUK.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class StudentsMarksObtainedsController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -593,7 +592,7 @@ namespace BSEUK.Controllers
                     result = new
                     {
                         totalMaxMarks = columnWiseTotals.TotalMaxMarks,
-                        TotalInternalMaxMarks = columnWiseTotals.TotalInternalMarks,
+                        TotalInternalMaxMarks = columnWiseTotals.MaxInternalMarks,
                         TotalInternalMarksObtained = columnWiseTotals.TotalInternalMarks,
                         TotalExternalMaxMarks = columnWiseTotals.MaxTheoryMarks,
                         TotalExternalMarksObtained = columnWiseTotals.TotalTheoryPaperMarks,
