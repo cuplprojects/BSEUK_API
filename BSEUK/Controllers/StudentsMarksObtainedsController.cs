@@ -167,7 +167,7 @@ namespace BSEUK.Controllers
                 }*/
 
 
-        [HttpGet("GetAllYearsResult/{rollNumber}")]
+        /*[HttpGet("GetAllYearsResult/{rollNumber}")]
         public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
         {
             var candidates = await _context.Candidates.Where(u => u.RollNumber == rollNumber).OrderBy(u => u.SemID).ToListAsync();
@@ -232,6 +232,120 @@ namespace BSEUK.Controllers
                     OverallTotalMaxMarks,
                     Status
                 });
+            }
+
+            // Calculate totals from the results
+            var totalTheoryMarks = results.Where(u => u.SemID != 4).Sum(r => r.TotalTheoryMaxMarks);
+            var totalInternalMarks = results.Where(u => u.SemID != 4).Sum(r => r.TotalInternalMaxMarks);
+            var totalSemMarksforInternal = totalTheoryMarks + totalInternalMarks;
+            var totalPracticalMarks = results.Sum(r => r.TotalPracticalMaxMarks) + results.Where(u => u.SemID == 4).Sum(r => r.TotalTheoryMaxMarks) + results.Where(u => u.SemID == 4).Sum(r => r.TotalInternalMaxMarks);
+            var total = totalSemMarksforInternal + totalPracticalMarks;
+
+            return Ok(new
+            {
+                Results = results,
+                SemMarks = totalSemMarksforInternal,
+                TotalPracticalMarks = totalPracticalMarks,
+                Total = total
+            });
+        }*/
+
+
+        [HttpGet("GetAllYearsResult/{rollNumber}")]
+        public async Task<ActionResult<object>> GetAllTotals(string rollNumber)
+        {
+            // Fetch candidates and order by SemID
+            var candidates = await _context.Candidates
+                .Where(u => u.RollNumber == rollNumber)
+                .OrderBy(u => u.SemID)
+                .ToListAsync();
+
+            // If no candidates are found
+            if (!candidates.Any())
+            {
+                return NotFound($"No Student found with this Roll Number: {rollNumber}");
+            }
+
+            var results = new List<dynamic>();
+            var allSemIds = _context.Semesters.ToList();
+
+            foreach (var semId in allSemIds)
+            {
+                var can = candidates.FirstOrDefault(c => c.SemID == semId.SemID);
+
+                if (can == null)
+                {
+                    // Add a hollow object for missing semester
+                    results.Add(new
+                    {
+                        CandidateId = (int?)null,
+                        CandidateName = "N/A",
+                        SemID = semId,
+                        RollNumber = rollNumber,
+                        TotalTheoryMaxMarks = 0,
+                        TotalTheoryMarks = 0,
+                        TotalInternalMaxMarks = 0,
+                        TotalInternalMarks = 0,
+                        TotalPracticalMaxMarks = 0,
+                        TotalPracticalMarks = 0,
+                        OverallTotalMarks = 0,
+                        OverallTotalMaxMarks = 0,
+                        Status = "N/A"
+                    });
+                }
+                else
+                {
+                    var optedPaperCodes = can.PapersOpted.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+                    var TheoryTotal = await _context.Papers
+                        .Where(u => u.SemID == can.SemID &&
+                                    (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                        .SumAsync(u => u.TheoryPaperMaxMarks);
+
+                    var PracticalTotal = await _context.Papers
+                        .Where(u => u.SemID == can.SemID &&
+                                    (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                        .SumAsync(u => u.PracticalMaxMarks);
+
+                    var InternalTotal = await _context.Papers
+                        .Where(u => u.SemID == can.SemID &&
+                                    (u.PaperType != 1 || (u.PaperType == 1 && optedPaperCodes.Contains(u.PaperCode.ToString()))))
+                        .SumAsync(u => u.InteralMaxMarks);
+
+                    var theoryMarks = await _context.StudentsMarksObtaineds
+                        .Where(u => u.CandidateID == can.CandidateID)
+                        .SumAsync(u => u.TheoryPaperMarks);
+
+                    var internalMarks = await _context.StudentsMarksObtaineds
+                        .Where(u => u.CandidateID == can.CandidateID)
+                        .SumAsync(u => u.InteralMarks);
+
+                    var practicalMarks = await _context.StudentsMarksObtaineds
+                        .Where(u => u.CandidateID == can.CandidateID)
+                        .SumAsync(u => u.PracticalMarks);
+
+                    var OverallTotalMarks = theoryMarks + internalMarks + practicalMarks;
+                    var OverallTotalMaxMarks = TheoryTotal + PracticalTotal + InternalTotal;
+
+                    var Status = OverallTotalMarks >= (OverallTotalMaxMarks / 2) ? "Pass" : "Fail";
+
+                    results.Add(new
+                    {
+                        CandidateId = can.CandidateID,
+                        CandidateName = can.CandidateName,
+                        SemID = can.SemID,
+                        RollNumber = can.RollNumber,
+                        TotalTheoryMaxMarks = TheoryTotal,
+                        TotalTheoryMarks = theoryMarks,
+                        TotalInternalMaxMarks = InternalTotal,
+                        TotalInternalMarks = internalMarks,
+                        TotalPracticalMaxMarks = PracticalTotal,
+                        TotalPracticalMarks = practicalMarks,
+                        OverallTotalMarks,
+                        OverallTotalMaxMarks,
+                        Status
+                    });
+                }
             }
 
             // Calculate totals from the results
@@ -1036,6 +1150,127 @@ namespace BSEUK.Controllers
             return CreatedAtAction("GetStudentsMarksObtained", new { id = studentsMarksObtained.SmoID }, studentsMarksObtained);
         }
 
+        [HttpPost("Admin/{Passkey}")]
+        public async Task<ActionResult<StudentsMarksObtained>> PostStudentsMarksObtainedAdmin(StudentsMarksObtained studentsMarksObtained,string Passkey)
+        {
+            if(Passkey!="Admin@123")
+            {
+                return Unauthorized("Wrong Password");
+            }
+            var can = await _context.Candidates.FirstOrDefaultAsync(u => u.CandidateID == studentsMarksObtained.CandidateID);
+            /*var lockstatus = await _context.LockStatuses.FirstOrDefaultAsync(u => u.SesID == can.SesID && u.SemID == can.SemID);
+            if (lockstatus != null)
+            {
+                if (lockstatus?.IsLocked == true)
+                {
+                    return BadRequest("Database is locked");
+                }
+
+            }*/
+            // Check if the record exists for the given CandidateID and PaperID
+            var existingRecord = _context.StudentsMarksObtaineds
+                .FirstOrDefault(s => s.CandidateID == studentsMarksObtained.CandidateID && s.PaperID == studentsMarksObtained.PaperID);
+            var paper = await _context.Papers.FirstOrDefaultAsync(u => u.PaperID == studentsMarksObtained.PaperID);
+            int userID = 0;
+            var userIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name);
+
+            if (userIdClaim != null)
+            {
+                Console.WriteLine($"Retrieved Claim Value: {userIdClaim.Value}");
+                if (int.TryParse(userIdClaim.Value, out userID))
+                {
+                    Console.WriteLine($"User ID: {userID}");
+                }
+            }
+
+            if (existingRecord != null)
+            {
+                // Update only the fields that have been provided (not null)
+                if (studentsMarksObtained.TheoryPaperMarks.HasValue && paper.PaperType == 1)
+                {
+                    int oldMarks = existingRecord.TheoryPaperMarks.Value;
+                    int newMarks = studentsMarksObtained.TheoryPaperMarks.Value;
+                    existingRecord.TheoryPaperMarks = studentsMarksObtained.TheoryPaperMarks;
+                    if (oldMarks != newMarks)
+                    {
+                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Theory", oldMarks, newMarks, userID);
+                    }
+                }
+
+                if (studentsMarksObtained.InteralMarks.HasValue && paper.PaperType == 1)
+                {
+                    int oldMarks = existingRecord.InteralMarks.Value;
+                    int newMarks = studentsMarksObtained.InteralMarks.Value;
+                    existingRecord.InteralMarks = studentsMarksObtained.InteralMarks;
+                    if (oldMarks != newMarks)
+                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Internal", oldMarks, newMarks, userID);
+                }
+
+                if (studentsMarksObtained.PracticalMarks.HasValue && paper.PaperType != 1)
+                {
+                    int oldMarks = existingRecord.PracticalMarks.Value;
+                    int newMarks = studentsMarksObtained.PracticalMarks.Value;
+                    existingRecord.PracticalMarks = studentsMarksObtained.PracticalMarks;
+                    if (oldMarks != newMarks)
+                        _loggerService.LogChangeInMarks($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, userID);
+                }
+
+                if (studentsMarksObtained.IsAbsent.HasValue)
+                {
+                    bool oldMarks = existingRecord.IsAbsent.HasValue ? existingRecord.IsAbsent.Value : false;
+                    bool newMarks = studentsMarksObtained.IsAbsent.Value;
+                    existingRecord.IsAbsent = studentsMarksObtained.IsAbsent;
+                    if (oldMarks != newMarks)
+                        _loggerService.LogChangeInAbsent($"Marks Updated for Paper:{paper.PaperName} for Candidate: {can.CandidateID}", "Practical", oldMarks, newMarks, userID);
+                }
+
+                if (studentsMarksObtained.Remark != null || studentsMarksObtained.Remark != "")
+                {
+                    string oldMarks = existingRecord.Remark == null ? "" : existingRecord.Remark;
+                    string newMarks = studentsMarksObtained.Remark;
+                    existingRecord.Remark = studentsMarksObtained.Remark;
+                }
+                // Calculate TotalMarks
+                existingRecord.TotalMarks = (existingRecord.TheoryPaperMarks ?? 0) +
+                                            (existingRecord.InteralMarks ?? 0) +
+                                            (existingRecord.PracticalMarks ?? 0);
+                if ((existingRecord.TheoryPaperMarks >= (paper.TheoryPaperMaxMarks / 2)) && (existingRecord.InteralMarks >= (paper.InteralMaxMarks / 2)) && (existingRecord.PracticalMarks >= (paper.PracticalMaxMarks / 2)) && (existingRecord.TotalMarks >= (paper.TotalMaxMarks / 2)))
+                {
+                    existingRecord.Status = "Pass";
+                }
+                else
+                {
+                    existingRecord.Status = "Fail";
+                }
+
+                // Save changes to the database
+                _context.Entry(existingRecord).State = EntityState.Modified;
+            }
+            else
+            {
+                // Calculate TotalMarks for the new record
+                studentsMarksObtained.TotalMarks = (studentsMarksObtained.TheoryPaperMarks ?? 0) +
+                                                   (studentsMarksObtained.InteralMarks ?? 0) +
+                                                   (studentsMarksObtained.PracticalMarks ?? 0);
+
+                if ((studentsMarksObtained.TheoryPaperMarks >= (paper.TheoryPaperMaxMarks / 2)) && (studentsMarksObtained.InteralMarks >= (paper.InteralMaxMarks / 2)) && (studentsMarksObtained.PracticalMarks >= (paper.PracticalMaxMarks / 2)) && (studentsMarksObtained.TotalMarks >= (paper.TotalMaxMarks / 2)))
+                {
+                    studentsMarksObtained.Status = "Pass";
+                }
+                else
+                {
+                    studentsMarksObtained.Status = "Fail";
+                }
+
+                // Add a new record if no existing record is found
+                _context.StudentsMarksObtaineds.Add(studentsMarksObtained);
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Return the updated or newly created record
+            return CreatedAtAction("GetStudentsMarksObtained", new { id = studentsMarksObtained.SmoID }, studentsMarksObtained);
+        }
 
         // DELETE: api/StudentsMarksObtaineds/5
         [HttpDelete("{id}")]
