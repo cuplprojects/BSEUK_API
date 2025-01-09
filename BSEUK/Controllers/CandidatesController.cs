@@ -95,6 +95,13 @@ namespace BSEUK.Controllers
         [HttpPost]
         public async Task<ActionResult<Candidate>> PostCandidate(Candidate candidate)
         {
+            var existingCount = _context.Candidates.Count(c => c.RollNumber == candidate.RollNumber && c.SesID == candidate.SesID);
+
+            if (existingCount >= 2)
+            {
+                return BadRequest("Candidate is already entrolled for 2 semesters in this session");
+            }
+
             _context.Candidates.Add(candidate);
             await _context.SaveChangesAsync();
 
