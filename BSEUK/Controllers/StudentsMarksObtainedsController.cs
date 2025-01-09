@@ -58,7 +58,7 @@ namespace BSEUK.Controllers
                     .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber }) // Include additional candidate details if needed
                     .ToList()
                 : candidates
-                    .Where(u => u.SemID == paper.SemID)
+                    .Where(u => u.SemID == paper.SemID && u.SesID == pns.SesID)
                     .Select(c => new { c.CandidateID, c.CandidateName, c.RollNumber })
                     .ToList();
 
@@ -260,6 +260,13 @@ namespace BSEUK.Controllers
                 .OrderBy(u => u.SemID)
                 .ToListAsync();
 
+            // Ensure we handle missing semester 4 data early
+            var can2 = candidates.FirstOrDefault(u => u.SemID == 4);
+            if (can2 == null)
+            {
+                return Ok(null);
+            }
+
             // If no candidates are found
             if (!candidates.Any())
             {
@@ -267,11 +274,13 @@ namespace BSEUK.Controllers
             }
 
             var results = new List<dynamic>();
-            var allSemIds = _context.Semesters.ToList();
 
-            foreach (var semId in allSemIds)
+            // Fetch all semesters from the database
+            var allSemIds = await _context.Semesters.ToListAsync();
+
+            foreach (var sem in allSemIds)
             {
-                var can = candidates.FirstOrDefault(c => c.SemID == semId.SemID);
+                var can = candidates.FirstOrDefault(c => c.SemID == sem.SemID); // Compare using sem.SemID
 
                 if (can == null)
                 {
@@ -280,7 +289,7 @@ namespace BSEUK.Controllers
                     {
                         CandidateId = (int?)null,
                         CandidateName = "N/A",
-                        SemID = semId,
+                        SemID = sem.SemID, // Use sem.SemID for proper assignment
                         RollNumber = rollNumber,
                         TotalTheoryMaxMarks = 0,
                         TotalTheoryMarks = 0,
@@ -352,7 +361,9 @@ namespace BSEUK.Controllers
             var totalTheoryMarks = results.Where(u => u.SemID != 4).Sum(r => r.TotalTheoryMaxMarks);
             var totalInternalMarks = results.Where(u => u.SemID != 4).Sum(r => r.TotalInternalMaxMarks);
             var totalSemMarksforInternal = totalTheoryMarks + totalInternalMarks;
-            var totalPracticalMarks = results.Sum(r => r.TotalPracticalMaxMarks) + results.Where(u => u.SemID == 4).Sum(r => r.TotalTheoryMaxMarks) + results.Where(u => u.SemID == 4).Sum(r => r.TotalInternalMaxMarks);
+            var totalPracticalMarks = results.Sum(r => r.TotalPracticalMaxMarks) +
+                                      results.Where(u => u.SemID == 4).Sum(r => r.TotalTheoryMaxMarks) +
+                                      results.Where(u => u.SemID == 4).Sum(r => r.TotalInternalMaxMarks);
             var total = totalSemMarksforInternal + totalPracticalMarks;
 
             return Ok(new
@@ -363,6 +374,7 @@ namespace BSEUK.Controllers
                 Total = total
             });
         }
+
 
 
 
