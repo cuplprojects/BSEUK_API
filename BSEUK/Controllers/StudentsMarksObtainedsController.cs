@@ -11,6 +11,7 @@ using System.Data;
 using BSEUK.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using OfficeOpenXml;
 
 
 
@@ -249,6 +250,89 @@ namespace BSEUK.Controllers
                 Total = total
             });
         }*/
+
+
+        [HttpPost("GetFormatedAudit")]
+        public async Task<ActionResult> GetFormattedAudit(inputforGCR inputforGCR)
+        {
+            var candidates = await _context.Candidates
+                .Where(u => u.SesID == inputforGCR.SesID && u.SemID == inputforGCR.SemID)
+                .ToListAsync();
+
+            var papers = await _context.Papers
+                .Where(u => u.SemID == inputforGCR.SemID)
+                .ToListAsync();
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Audit Data");
+
+                // Create headers
+                worksheet.Cells[1, 1].Value = "Candidate Name";
+                worksheet.Cells[1, 2].Value = "Roll Number";
+
+                int paperStartCol = 3;
+                bool isLightColor = true; // Toggle for alternating colors
+
+                foreach (var paper in papers)
+                {
+                    // Set header values
+                    worksheet.Cells[1, paperStartCol].Value = paper.PaperName;
+                    worksheet.Cells[2, paperStartCol].Value = "External";
+                    worksheet.Cells[2, paperStartCol + 1].Value = "Internal";
+                    worksheet.Cells[2, paperStartCol + 2].Value = "Practicals";
+
+                    // Apply alternating colors
+                    var headerRange = worksheet.Cells[1, paperStartCol, 2, paperStartCol + 2];
+                    headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    headerRange.Style.Fill.BackgroundColor.SetColor(
+                        isLightColor ? System.Drawing.Color.LightBlue : System.Drawing.Color.LightGray
+                    );
+
+                    // Toggle color for next group
+                    isLightColor = !isLightColor;
+
+                    paperStartCol += 3;
+                }
+
+                // Populate data
+                int row = 3;
+                foreach (var candidate in candidates)
+                {
+                    worksheet.Cells[row, 1].Value = candidate.CandidateName;
+                    worksheet.Cells[row, 2].Value = candidate.RollNumber;
+
+                    int col = 3;
+                    foreach (var paper in papers)
+                    {
+                        var marks = await _context.StudentsMarksObtaineds
+                            .FirstOrDefaultAsync(m => m.CandidateID == candidate.CandidateID && m.PaperID == paper.PaperID);
+
+                        worksheet.Cells[row, col].Value = marks?.TheoryPaperMarks;
+                        worksheet.Cells[row, col + 1].Value = marks?.InteralMarks;
+                        worksheet.Cells[row, col + 2].Value = marks?.PracticalMarks;
+
+                        col += 3;
+                    }
+
+                    row++;
+                }
+
+                // Adjust column widths
+                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+
+                // Generate Excel file
+                var stream = new MemoryStream();
+                package.SaveAs(stream);
+                stream.Position = 0;
+
+                var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                var fileName = "FormattedAudit.xlsx";
+
+                return File(stream, contentType, fileName);
+            }
+        }
+
 
 
         [HttpGet("GetAllYearsResult/{rollNumber}")]

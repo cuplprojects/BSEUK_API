@@ -15,6 +15,7 @@
     <PackageReference Include="CrystalReports.ReportAppServer.ClientDoc" Version="13.0.4003" />
     <PackageReference Include="CrystalReports.Windows.Forms" Version="13.0.4003" />
     <PackageReference Include="DinkToPdf" Version="1.0.8" />
+    <PackageReference Include="EPPlus" Version="7.5.2" />
     <PackageReference Include="itext7" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNet.Cors" Version="5.3.0" />
     <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.3.0" />
