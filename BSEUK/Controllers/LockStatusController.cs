@@ -31,17 +31,18 @@ namespace BSEUK.Controllers
         }
 
         // GET: api/LockStatus/5
-        [HttpGet("getbysessionandsemester")]
+        [AllowAnonymous]
+        [HttpPost("getbysessionandsemester")]
         public async Task<ActionResult<LockStatus>> GetLockStatus(inputinfo info)
         {
-            var lockStatus = await _context.LockStatuses.FirstOrDefaultAsync(u=>u.SemID == info.SemID && u.SesID==info.SesID);
+            var lockStatus = await _context.LockStatuses.FirstOrDefaultAsync(u => u.SemID == info.SemID && u.SesID == info.SesID);
 
             if (lockStatus == null)
             {
                 return NotFound();
             }
 
-            return lockStatus;
+            return Ok(lockStatus);
         }
 
         // PUT: api/LockStatus/5
