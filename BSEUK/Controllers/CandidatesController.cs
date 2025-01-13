@@ -192,6 +192,8 @@ namespace BSEUK.Controllers
             candidate.DOB = updatedCandidate.DOB;
             candidate.InstitutionName = updatedCandidate.InstitutionName;
             candidate.Category = updatedCandidate.Category;
+            
+            // Update PapersOpted with comma-separated paper codes
             candidate.PapersOpted = updatedCandidate.PapersOpted;
 
             try
