@@ -31,7 +31,6 @@ namespace BSEUK.Controllers
         }
 
         // GET: api/LockStatus/5
-        [AllowAnonymous]
         [HttpPost("getbysessionandsemester")]
         public async Task<ActionResult<LockStatus>> GetLockStatus(inputinfo info)
         {
