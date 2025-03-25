@@ -31,5 +31,7 @@ namespace BSEUK.Models
         public string Category { get; set; }
 
         public string PapersOpted { get; set; }
+
+        public int? Dist_Code { get; set; }
     }
 }

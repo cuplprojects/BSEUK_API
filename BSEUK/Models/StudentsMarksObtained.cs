@@ -26,5 +26,7 @@ namespace BSEUK.Models
         public string? Remark { get; set; }
 
         public bool? IsAbsent { get; set; }
+
+      
     }
 }

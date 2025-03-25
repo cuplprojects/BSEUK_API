@@ -20,6 +20,8 @@ namespace BSEUK.Data
         public DbSet<LockStatus> LockStatuses { get; set; }
         public DbSet<Role> Roles { get; set; }
 
+        public DbSet<Sem4Ses3Tr2N> sem4ses3tr2nd { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
 
