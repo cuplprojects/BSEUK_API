@@ -211,6 +211,17 @@ namespace BSEUK.Controllers
 
                 if (can == null)
                 {
+                    var theoryMaxMarksSum = await _context.Papers
+        .Where(p => p.SemID == sem.SemID)
+        .SumAsync(p => p.TheoryPaperMaxMarks);
+
+                    var internalMaxMarksSum = await _context.Papers
+                        .Where(p => p.SemID == sem.SemID)
+                        .SumAsync(p => p.InteralMaxMarks);
+
+                    var practicalMaxMarksSum = await _context.Papers
+                        .Where(p => p.SemID == sem.SemID)
+                        .SumAsync(p => p.PracticalMaxMarks);
                     // Add a hollow object for missing semester
                     results.Add(new
                     {
@@ -218,14 +229,14 @@ namespace BSEUK.Controllers
                         CandidateName = "N/A",
                         SemID = sem.SemID, // Use sem.SemID for proper assignment
                         RollNumber = rollNumber,
-                        TotalTheoryMaxMarks = 0,
+                        TotalTheoryMaxMarks = theoryMaxMarksSum,
                         TotalTheoryMarks = 0,
-                        TotalInternalMaxMarks = 0,
+                        TotalInternalMaxMarks = internalMaxMarksSum,
                         TotalInternalMarks = 0,
-                        TotalPracticalMaxMarks = 0,
+                        TotalPracticalMaxMarks = practicalMaxMarksSum,
                         TotalPracticalMarks = 0,
                         OverallTotalMarks = 0,
-                        OverallTotalMaxMarks = 0,
+                        OverallTotalMaxMarks = theoryMaxMarksSum + internalMaxMarksSum + practicalMaxMarksSum,
                         Status = "N/A"
                     });
                 }
