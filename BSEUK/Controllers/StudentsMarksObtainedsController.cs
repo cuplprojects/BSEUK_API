@@ -520,7 +520,7 @@ namespace BSEUK.Controllers
                 TotalMaxMarks = scoresWithRowTotal.Sum(s => s.RowMaxTotal)
             };
 
-            var overallRemarks = scoresWithRowTotal.Any(s => s.PaperRemarks == "असफल") ? "असफल" : "उत्तीर्ण";
+            var overallRemarks = scoresWithRowTotal.Any(s => s.PaperRemarks == "असफल") ? "अनुत्तीर्ण" : "उत्तीर्ण";
 
             // Combine the results
             var result = new
