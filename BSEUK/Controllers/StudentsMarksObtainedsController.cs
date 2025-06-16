@@ -393,7 +393,7 @@ namespace BSEUK.Controllers
             var awardsheetNumber = "";
             using (var command = _context.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT AwardsheetNumber FROM sem4ses3tr2nd WHERE RollNumber = @RollNumber";
+                command.CommandText = "SELECT Awardsheetnumber FROM sem2session2426 WHERE RollNumber = @RollNumber";
                 command.Parameters.Add(new MySqlParameter("@RollNumber", studentDetails.RollNumber));
                 _context.Database.OpenConnection();
                 using (var commandresult = command.ExecuteReader())
